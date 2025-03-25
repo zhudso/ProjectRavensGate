@@ -1,9 +1,9 @@
-$storageDrives = Get-PSDrive -PSProvider FileSystem
-$valheimInstallDir = "Program Files (x86)\Steam\steamapps\common\Valheim"
-$valheimPlusWindowsClientUri = "https://github.com/valheimPlus/ValheimPlus/releases/download/0.9.9.11/WindowsClient.zip"
-$valheimPlusWindowsClientFolder = "$env:USERPROFILE\Downloads\ValheimPlusMod_v0.9.9.11_WindowsClient.zip"
-$valheimBackupFolder = "$($installedDrive)Program Files (x86)\Steam\steamapps\common\Valheim Backup $(Get-Date -Format 'dd-MM-yyyy')"
-$moddedServer = "modded.valheim.ravensgate.net"
+$storageDrives = Get-PSDrive -PSProvider FileSystem # Get all drives on the system to search for Valheim install directory
+$installedDrive = "C:\" # Default drive to search for Valheim install directory
+$valheimInstallDir = "Program Files (x86)\Steam\steamapps\common\Valheim" # Default Valheim install directory
+$valheimPlusWindowsClientUri = "https://github.com/Grantapher/ValheimPlus/releases/download/0.9.16.2/WindowsClient.zip" # Valheim Plus mod download link (made by Grant Toepfer)
+$valheimPlusWindowsClientFolder = "$env:USERPROFILE\Downloads\ValheimPlusMod_v0.9.16.2_WindowsClient.zip" # Folder to download the Valheim Plus mod to
+$moddedServer = "modded.valheim.ravensgate.net" # Modded server to connect to
 
 # Find where Valheim is installed
 foreach ($drive in $storageDrives) {
@@ -13,7 +13,7 @@ foreach ($drive in $storageDrives) {
         break
     }
     else {
-        Write-Warning "Unable to find Valheim install directory $valheimInstallDir."
+        Write-Warning "Unable to find expected Valheim install directory ($valheimInstallDir)."
         $valheimInstallDir = Read-Host "Please provide where full path where Valheim is installed"
     }
 }
@@ -26,8 +26,16 @@ Write-Output "Downloading Valheim Plus mod to $valheimPlusWindowsClientFolder...
 
 $backupValheimFolder = Read-Host "Would you like to backup your Valheim folder? (Y/N)"
 if ($backupValheimFolder -eq "Y") {
-    Copy-Item -Path $valheimInstallDir -Destination $valheimBackupFolder -Recurse -Force
-    Write-Host -ForegroundColor Green "Valheim folder backed up to $valheimBackupFolder."
+    $valheimBackupFolder = "$($installedDrive)Program Files (x86)\Steam\steamapps\common\Valheim Backup $(Get-Date -Format 'dd-MM-yyyy')" # Set Valheim folder backup directory
+    try {
+        Copy-Item -Path $valheimInstallDir -Destination "$valheimBackupFolder" -Recurse -Force
+        Write-Host -ForegroundColor Green "Valheim folder backed up to $valheimBackupFolder."
+    }
+    catch {
+        Write-Warning "Failed to backup Valheim folder to $valheimBackupFolder."
+        Write-Error $($_.Exception.Message)
+        return
+    }
 }
 
 # Extract ValheimPlus to the main Valheim directory
@@ -48,8 +56,8 @@ foreach ($file in $extractedFiles) {
 
 if ($allFilesInstalled) {
     Write-Host -ForegroundColor Green "Valheim Plus mod installed successfully to $valheimInstallDir."
-    $EmojiIcon = [System.Convert]::toInt32("1F38A",16)
-    Write-Host -ForegroundColor Green $([System.Char]::ConvertFromUtf32($EmojiIcon)) "You can now connect to the modded server at ($moddedServer)" $([System.Char]::ConvertFromUtf32($EmojiIcon))
+    $ConfettiBombEmoji = [System.Convert]::toInt32("1F38A",16)
+    Write-Host -ForegroundColor Green $([System.Char]::ConvertFromUtf32($ConfettiBombEmoji)) "You can now connect to the modded server at ($moddedServer)" $([System.Char]::ConvertFromUtf32($ConfettiBombEmoji))
 } else {
-    Write-Warning "Valheim Plus mod failed to install completely to $valheimInstallDir."
+    Write-Warning "Valheim Plus mod failed to completely install to $valheimInstallDir."
 }
